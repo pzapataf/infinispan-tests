@@ -1,21 +1,24 @@
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.NumericField;
 
 import java.io.Serializable;
 
 @Indexed
 public class Book implements Serializable {
     @Field(analyze=Analyze.NO)
+    @NumericField()
     private long id;
 
     @Field
     private String title;
 
-    @Field
+    @Field(analyze=Analyze.NO)
     private String description;
 
     @Field
+    @NumericField
     private int rating;
 
     public Book() {

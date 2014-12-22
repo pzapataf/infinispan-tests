@@ -17,7 +17,7 @@ public class InfinispanTest {
         System.out.println("**************************************************************");
 
         for (Object thing : result) {
-            // System.out.println(thing + "\n");
+            System.out.println(thing + "\n");
         }
 
         System.out.println("\nTOTAL: " + result.size());
@@ -26,6 +26,7 @@ public class InfinispanTest {
 
     @Test
     public void testSimpleCache() throws Exception {
+
         InfinispanCache.getInstance().init();
 
         BasicConfigurator.configure();
@@ -36,27 +37,58 @@ public class InfinispanTest {
             Book book = new Book();
             book.setId(i);
             book.setTitle("Title " + i);
-            book.setDescription("Descrption " + i);
+            book.setDescription("Description " + i);
             book.setRating(i % 5);
             getCache().put(book.getId(), book);
         }
 
         Assert.assertEquals(getCache().size(), 1000);
 
-        QueryFactory qf = Search.getQueryFactory(getCache());
+        /////////////////////////////////////////////////////////////////////////////////
+        ///
+        /// Now do some queries
 
-        // create a query for all the books that have a title which contains the word "engine":
+
+        QueryFactory qf = Search.getQueryFactory(getCache());
         org.infinispan.query.dsl.Query query;
 
-
+        /////////////////////////////////////////////////////////////////////////////////
         query = qf.from(Book.class).build();
         printResults(query.list());
+        Assert.assertEquals(query.getResultSize(), 1000);
 
+
+        /////////////////////////////////////////////////////////////////////////////////
+        query = qf.from(Book.class)
+                .having("id").gte(900).
+                        toBuilder().build();
+
+     //   printResults(query.list());
+        Assert.assertEquals(100, query.getResultSize());
+
+
+        /////////////////////////////////////////////////////////////////////////////////
         query = qf.from(Book.class)
                 .having("id").between(5, 100).
                         toBuilder().build();
 
+     //   printResults(query.list());
+        Assert.assertEquals(96, query.getResultSize());
+
+        /////////////////////////////////////////////////////////////////////////////////
+        query = qf.from(Book.class)
+                .having("description").eq("Description 1").
+                        toBuilder().build();
+
+//        printResults(query.list());
+        Assert.assertEquals(1, query.getResultSize());
+
+        /////////////////////////////////////////////////////////////////////////////////
+        query = qf.from(Book.class)
+                .having("description").like("%00%").toBuilder().build();
+
         printResults(query.list());
+        Assert.assertEquals(9, query.getResultSize());
 
 
         InfinispanCache.getInstance().shutdown();

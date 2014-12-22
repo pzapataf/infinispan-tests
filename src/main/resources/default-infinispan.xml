@@ -13,7 +13,9 @@
                         max-entries="-1"
                         />
             </persistence>
-            <indexing index="LOCAL" auto-config="true">
+            <indexing index="LOCAL" >
+                <property name="hibernate.search.default.directory_provider">filesystem</property>
+                <property name="hibernate.search.default.indexBase">/tmp/testdata/index</property>
             </indexing>
 
         </local-cache>
