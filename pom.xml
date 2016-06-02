@@ -41,13 +41,14 @@
 
     <dependencies>
         <!-- Import the infinispan core -->
+      <!--
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
             <scope>compile</scope>
         </dependency>
 
-        <!-- Import the Infinispan client hotrod -->
+
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-client-hotrod</artifactId>
@@ -61,6 +62,14 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-query-dsl</artifactId>
             <scope>compile</scope>
+        </dependency>
+
+
+
+        -->
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-remote</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
