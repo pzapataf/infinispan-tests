@@ -1,3 +1,4 @@
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import junit.framework.Assert;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
@@ -24,25 +25,94 @@ public class InfinispanRemote {
     public static final String CACHE_NAME = "testcache";
     public static final String SCRIPT_CACHE = "___script_cache";
 
-    public static final int MAX_ITEMS = 5000000;
+    public static final int MAX_ITEMS = 1000;
 
     @Test
     public void testWriteToRemote() throws IOException {
 
         RemoteCacheManager cacheManager = getRemoteCacheManager();
 
-        RemoteCache<String, Object> cache = cacheManager.getCache("default");
+        RemoteCache<String, Object> cache = cacheManager.getCache("pz");
 
         Assert.assertNotNull(cache);
 
         long start = System.currentTimeMillis();
-        for( int i = 0; i < MAX_ITEMS; i++) {
+        for( int i = 0; i < 100; i++) {
             System.out.println("Adding " + i);
             cache.putIfAbsent("Item_" + start + "_" + i, "A test item");
         }
 
+
+
         cacheManager.stop();
     }
+
+    @Test
+    public void testReadToRemote() throws IOException {
+
+        RemoteCacheManager cacheManager = getRemoteCacheManager();
+
+        RemoteCache<String, Object> cache = cacheManager.getCache("testrepl");
+
+        Assert.assertNotNull(cache);
+
+        long start = System.currentTimeMillis();
+        for( int i = 0; i < 10; i++) {
+            String key="Item_" + start + "_" + i;
+            System.out.println("Putting " + key);
+            cache.put(key, "A test item");
+        }
+
+        for( int i = 10; i < 20; i++) {
+            String key="Item_" + start + "_" + i;
+            System.out.println("Putting " + key);
+            cache.put(key, "A test item");
+        }
+
+        for( int i = 0; i < 10; i++) {
+            String key="Item_" + start + "_" + i;
+            System.out.println("Reading " + key);
+            System.out.println(cache.get(key));
+        }
+
+
+        cacheManager.stop();
+    }
+
+
+    @Test
+    @Ignore
+    public void testWriteToRemoteInThreads() throws IOException, InterruptedException {
+
+        for(int i = 0; i < 100;i++) {
+            new Thread(
+                    () -> {
+                        long start = System.currentTimeMillis();
+
+                        RemoteCacheManager cacheManager = null;
+                        try {
+                            cacheManager = getRemoteCacheManager();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        cacheManager.start();
+
+                        RemoteCache<String, Object> cache = cacheManager.getCache("default");
+
+
+                        for (int i1 = 0; i1 < MAX_ITEMS * 100; i1++) {
+                            System.out.println("Adding " + i1);
+                            cache.putIfAbsent("Item_" + start + "_" + i1, "A test item");
+                        }
+
+
+                        cacheManager.stop();
+                    }).start();
+        }
+
+        Thread.sleep(100000000L);
+    }
+
 
     public void registerScript(String name, String body) throws IOException {
         RemoteCacheManager cacheManager = getRemoteCacheManager();
@@ -131,8 +201,6 @@ public class InfinispanRemote {
                 .marshaller(new ProtoStreamMarshaller());
 
 
-
-
         RemoteCacheManager remoteCacheManager = new RemoteCacheManager(builder.build());
 
         SerializationContext serCtx = ProtoStreamMarshaller.getSerializationContext(remoteCacheManager);
@@ -148,9 +216,9 @@ public class InfinispanRemote {
     public void testRemoteQueries() throws IOException {
         RemoteCacheManager cacheManager = getRemoteCacheManager();
 
-        RemoteCache<String, Object> cache = cacheManager.getCache("newCache3");
+        RemoteCache<String, Object> cache = cacheManager.getCache("CACHE_SEARCH");
 
-        for( int i = 0; i < 10; i++) {
+        for( int i = 0; i < 100; i++) {
             Something something = new Something("thing"+i, "valueofthing"+i);
             cache.put(something.getKey(), something);
 
@@ -159,14 +227,28 @@ public class InfinispanRemote {
 
         QueryFactory qf = Search.getQueryFactory(cache);
 
-        Query query = qf.from(Something.class)
+        Query query1 = qf.from(Something.class)
                 .having("value").eq("valueofthing5")
                 .toBuilder().build();
 
-        List list = query.list();
+        List list = query1.list();
         System.out.println("RESULT SIZE: " + list.size());
 
-        Assert.assertTrue(list.size() > 0);
+        Assert.assertEquals(list.size(), 1);
+
+        Query query2 = qf.from(Something.class)
+                .having("value").like("valueofthing1%")
+                .toBuilder().build();
+
+        list = query2.list();
+        System.out.println("RESULT SIZE: " + list.size());
+        for (Object o : list) {
+            System.out.println(o.toString());
+        }
+
+        Assert.assertEquals(11, list.size());
+
+
 
     }
 }

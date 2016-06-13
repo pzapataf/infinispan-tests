@@ -1,8 +1,10 @@
+import java.io.Serializable;
+
 /**
  * Test class
  */
-public class Something {
-    private  String key;
+public class Something implements Serializable {
+    private String key;
     private String value;
 
     public Something(String key, String value) {
